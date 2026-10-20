@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tekuno · Simulador de inversión — Constructora CEIRO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#22282B;
+  --ink-2:#4A545A;
+  --ink-3:#7C868C;
+  --concrete:#ECEBE7;
+  --concrete-2:#DDDBD4;
+  --line:#C9C6BE;
+  --white:#FFFFFF;
+  --orange:#E2571F;
+  --orange-soft:#F2B895;
+  --teal:#2E7B7F;
+  --teal-deep:#1B4E52;
+  --grey-bar:#9AA3A6;
+  --pad:clamp(20px,4vw,64px);
+}
+*,*::before,*::after{box-sizing:border-box;}
+body{
+  margin:0;background:var(--concrete);color:var(--ink);
+  font-family:'Barlow','Helvetica Neue',Arial,sans-serif;
+  font-size:clamp(15px,1vw,17px);line-height:1.5;
+}
+h1,h2,h3,.cond{font-family:'Barlow Condensed','Helvetica Neue',Arial,sans-serif;}
+h1,h2,h3{margin:0;font-weight:600;line-height:1.05;}
+p{margin:0;}
+ul{margin:0;padding:0;list-style:none;}
+button,select{font:inherit;color:inherit;}
+button{background:none;border:none;cursor:pointer;}
+:focus-visible{outline:2px solid var(--orange);outline-offset:3px;}
+.num{font-variant-numeric:tabular-nums;}
+.wrap{max-width:1280px;margin:0 auto;padding:0 var(--pad);}
+
+/* ---------- internal banner ---------- */
+#internal{
+  background:#FFE9A8;color:#4A3A00;font-size:13.5px;
+}
+#internal .wrap{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;padding-top:8px;padding-bottom:8px;}
+#internal b{font-weight:600;}
+#internal select{
+  background:#FFF6D6;border:1px solid #D9C271;padding:2px 6px;font-size:13.5px;
+}
+#internal select:disabled{opacity:.5;}
+#internal .diff{color:#8A5A00;}
+#internal .hide{margin-left:auto;text-decoration:underline;font-size:13.5px;}
+#internal[hidden]{display:none;}
+
+/* ---------- header ---------- */
+header.top{background:var(--teal-deep);color:var(--white);}
+header.top .wrap{
+  display:flex;flex-wrap:wrap;gap:22px 40px;align-items:flex-end;justify-content:space-between;
+  padding-top:clamp(22px,3.4vw,40px);padding-bottom:clamp(22px,3vw,34px);
+}
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+.logo svg{width:30px;height:30px;flex:none;}
+.logo span{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:22px;letter-spacing:.13em;}
+header h1{font-size:clamp(32px,4.4vw,56px);}
+header .sub{margin-top:8px;color:rgba(255,255,255,.72);font-size:1.02em;}
+.controls{display:flex;flex-direction:column;gap:12px;}
+.ctl-label{font-family:'Barlow Condensed',sans-serif;font-size:.98em;color:rgba(255,255,255,.62);margin-bottom:5px;display:block;}
+.seg{display:inline-flex;border:1px solid rgba(255,255,255,.35);}
+.seg button{
+  padding:8px 16px;font-family:'Barlow Condensed',sans-serif;font-size:1.08em;
+  color:rgba(255,255,255,.78);transition:background .15s ease,color .15s ease;
+}
+.seg button + button{border-left:1px solid rgba(255,255,255,.35);}
+.seg button[aria-pressed="true"]{background:var(--white);color:var(--teal-deep);font-weight:600;}
+
+/* ---------- summary ---------- */
+.summary{background:var(--white);border-bottom:1px solid var(--line);}
+.summary .wrap{
+  display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:0;
+  padding-top:clamp(20px,2.6vw,30px);padding-bottom:clamp(20px,2.6vw,30px);
+}
+.fig{padding:0 clamp(14px,2.4vw,34px);border-left:1px solid var(--line);}
+.fig:first-child{padding-left:0;border-left:none;}
+.fig .k{font-family:'Barlow Condensed',sans-serif;font-size:1.18em;color:var(--ink-2);}
+.fig .v{
+  font-family:'Barlow Condensed',sans-serif;font-weight:600;line-height:1;margin-top:4px;
+  font-size:clamp(30px,3.6vw,50px);font-variant-numeric:tabular-nums;
+}
+.fig:first-child .v{color:var(--orange);}
+.fig .h{margin-top:8px;font-size:.92em;color:var(--ink-3);max-width:34ch;}
+
+/* ---------- simulator ---------- */
+main{padding:clamp(24px,3.4vw,44px) 0 clamp(30px,4vw,56px);}
+.sim-head{display:flex;flex-wrap:wrap;gap:14px 30px;justify-content:space-between;align-items:flex-end;margin-bottom:18px;}
+.sim-head h2{font-size:clamp(26px,2.8vw,38px);}
+.sim-head p{margin-top:6px;color:var(--ink-2);max-width:60ch;}
+.play{
+  display:inline-flex;align-items:center;gap:10px;background:var(--ink);color:var(--white);
+  padding:10px 20px;font-family:'Barlow Condensed',sans-serif;font-size:1.12em;
+}
+.play:hover{background:var(--orange);}
+.play svg{width:12px;height:12px;}
+
+.chart-card{background:var(--white);border:1px solid var(--line);padding:clamp(14px,2vw,24px);}
+#chart{width:100%;height:auto;display:block;}
+#chart .axis{font-family:'Barlow Condensed',sans-serif;font-size:13px;fill:var(--ink-3);}
+#chart .endlab{font-family:'Barlow Condensed',sans-serif;font-size:14px;fill:var(--ink);font-weight:600;}
+#chart .hit{fill:transparent;cursor:pointer;}
+.legend{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:12px;font-size:.9em;color:var(--ink-2);}
+.legend i{display:inline-block;width:18px;height:10px;margin-right:7px;vertical-align:middle;}
+.legend i.line{height:2px;background:var(--ink);}
+
+.slider{display:flex;align-items:center;gap:18px;margin-top:18px;}
+.slider label{font-family:'Barlow Condensed',sans-serif;font-size:1.1em;color:var(--ink-2);}
+.slider input{flex:1;accent-color:var(--orange);height:28px;}
+.slider output{
+  font-family:'Barlow Condensed',sans-serif;font-size:1.3em;font-weight:600;min-width:9.5ch;text-align:right;
+}
+
+.readout{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:22px;background:var(--white);border:1px solid var(--line);}
+.kpi{padding:16px clamp(14px,1.6vw,22px);border-left:1px solid var(--line);min-width:0;}
+.kpi:first-child{border-left:none;}
+.kpi .k{font-family:'Barlow Condensed',sans-serif;font-size:1.06em;color:var(--ink-3);}
+.kpi .v{
+  font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:clamp(22px,2.2vw,32px);
+  line-height:1.05;margin-top:2px;font-variant-numeric:tabular-nums;
+}
+.kpi .d{margin-top:6px;font-size:.9em;color:var(--ink-2);}
+.kpi.paid .v{color:var(--teal-deep);}
+.meter{height:6px;background:var(--concrete-2);margin-top:10px;}
+.meter i{display:block;height:100%;background:var(--teal-deep);width:0;transition:width .3s ease;}
+
+.lower{display:grid;grid-template-columns:1fr 1.25fr;gap:clamp(18px,2.6vw,36px);margin-top:clamp(22px,3vw,36px);}
+.lower h3{font-size:1.5em;margin-bottom:10px;}
+.phase{
+  padding:14px 16px;background:var(--white);border-left:3px solid var(--orange);
+  margin-bottom:16px;color:var(--ink);min-height:54px;
+}
+.ms li{
+  display:grid;grid-template-columns:18px auto 1fr;gap:12px;align-items:baseline;
+  padding:11px 0;border-bottom:1px solid var(--line);
+}
+.ms li:last-child{border-bottom:none;}
+.ms .mk{
+  width:14px;height:14px;border:2px solid var(--line);border-radius:50%;
+  align-self:center;transition:background .2s ease,border-color .2s ease;
+}
+.ms li.done .mk{background:var(--teal-deep);border-color:var(--teal-deep);}
+.ms .when{font-family:'Barlow Condensed',sans-serif;font-size:1.05em;color:var(--ink-3);white-space:nowrap;}
+.ms .t{font-family:'Barlow Condensed',sans-serif;font-size:1.15em;font-weight:600;display:block;}
+.ms .dsc{font-size:.9em;color:var(--ink-2);}
+.ms li:not(.done) .t{color:var(--ink-2);}
+
+.sched{position:relative;max-height:430px;overflow-y:auto;background:var(--white);border:1px solid var(--line);}
+.sched table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;}
+.sched th{
+  position:sticky;top:0;background:var(--ink);color:var(--white);z-index:1;
+  font-family:'Barlow Condensed',sans-serif;font-weight:500;font-size:1em;text-align:left;padding:9px 12px;
+}
+.sched td{padding:10px 12px;border-bottom:1px solid var(--concrete-2);vertical-align:top;font-size:.94em;}
+.sched td.m{font-family:'Barlow Condensed',sans-serif;font-size:1.1em;white-space:nowrap;}
+.sched td.a{text-align:right;white-space:nowrap;font-weight:600;}
+.sched th.a{text-align:right;}
+.sched td.s{white-space:nowrap;font-size:.86em;color:var(--ink-3);}
+.sched tr.paid td{color:var(--ink-3);}
+.sched tr.paid td.s{color:var(--teal-deep);font-weight:600;}
+.sched tr.cur td{background:#FBEDE5;color:var(--ink);}
+.sched tr.cur td.s{color:var(--orange);font-weight:600;}
+.sched .c{display:block;}
+.sched tfoot td{
+  position:sticky;bottom:0;background:var(--concrete);border-top:2px solid var(--ink);
+  font-family:'Barlow Condensed',sans-serif;font-size:1.15em;font-weight:600;
+}
+
+/* ---------- terms ---------- */
+.terms{border-top:1px solid var(--line);background:var(--white);}
+.terms .wrap{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2vw,30px);
+  padding-top:clamp(20px,2.6vw,30px);padding-bottom:clamp(22px,3vw,34px);
+}
+.terms h3{font-size:1.14em;margin-bottom:5px;}
+.terms p{font-size:.9em;color:var(--ink-2);}
+.foot{padding:16px 0 22px;font-size:.84em;color:var(--ink-3);}
+
+/* ---------- beneficios de referencia ---------- */
+.bene{border-top:1px solid var(--line);padding:clamp(28px,4vw,56px) 0;}
+.bene-group{margin-top:clamp(20px,3vw,32px);transition:opacity .2s ease;}
+.bene-group h3{font-size:1.5em;margin-bottom:14px;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;}
+.bene-group .only{font-family:'Barlow',sans-serif;font-size:.56em;font-weight:500;color:var(--ink-3);}
+.bene-group.off{opacity:.38;}
+.bene-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.8vw,22px);}
+.bn{background:var(--white);border:1px solid var(--line);border-top:3px solid var(--teal);padding:18px 20px;display:flex;flex-direction:column;gap:8px;}
+#beneCompras .bn{border-top-color:var(--orange);}
+.bn-area{font-family:'Barlow Condensed',sans-serif;font-size:1.08em;color:var(--ink-3);}
+.bn-n{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:clamp(36px,3.6vw,52px);line-height:1;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.bn-t{font-size:.96em;}
+.mv{display:flex;flex-direction:column;gap:7px;margin:4px 0 2px;}
+.mv-row{display:grid;grid-template-columns:8.4em 1fr 3.7em;gap:10px;align-items:center;font-size:.84em;color:var(--ink-2);}
+.mv-track{height:11px;background:var(--concrete-2);position:relative;overflow:hidden;}
+.mv-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--teal);transition:width 1s cubic-bezier(.2,.7,.2,1) .15s;}
+.mv-fill.hot{background:var(--orange);}
+.mv-fill.base{background:var(--grey-bar);}
+.bene.in .mv-fill{width:var(--w);}
+.mv-seg{position:absolute;top:0;bottom:0;left:var(--l);width:0;background:var(--orange);transition:width .6s ease 1s;}
+.bene.in .mv-seg{width:var(--w);}
+.mv-v{font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--ink);text-align:right;font-size:1.12em;white-space:nowrap;}
+.mv-band{position:relative;height:15px;transform:scaleX(0);transition:transform .9s cubic-bezier(.2,.7,.2,1) .15s;}
+.bene.in .mv-band{transform:scaleX(1);}
+.mv-band .o{position:absolute;inset:0;background:#F6D3C0;}
+.mv-band .i{position:absolute;top:0;bottom:0;left:25%;right:25%;background:var(--orange);}
+.mv-band .c{position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--ink);}
+.mv-legend{display:flex;justify-content:space-between;font-size:.76em;color:var(--ink-3);}
+.bn-m{margin-top:auto;padding-top:10px;border-top:1px dashed var(--line);font-family:'Barlow Condensed',sans-serif;font-size:1.06em;color:var(--teal-deep);}
+.bn-s{font-size:.82em;color:var(--ink-3);}
+.bene-note{margin-top:24px;padding:16px 18px;background:var(--white);border-left:3px solid var(--orange);font-size:.95em;color:var(--ink-2);max-width:96ch;}
+.lower > div{min-width:0;}
+.sources{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);}
+.sources h3{font-size:1.2em;margin-bottom:8px;}
+.sources li{font-size:.87em;color:var(--ink-2);padding:3px 0;}
+.sources a{color:var(--teal-deep);}
+
+@media (max-width:980px){
+  .bene-grid{grid-template-columns:1fr;}
+  .summary .wrap{grid-template-columns:1fr;gap:18px;}
+  .fig{padding:0;border-left:none;border-top:1px solid var(--line);padding-top:16px;}
+  .fig:first-child{border-top:none;padding-top:0;}
+  .readout{grid-template-columns:1fr 1fr;}
+  .kpi:nth-child(3){border-left:none;}
+  .kpi:nth-child(n+3){border-top:1px solid var(--line);}
+  .lower{grid-template-columns:1fr;}
+  .terms .wrap{grid-template-columns:1fr 1fr;}
+}
+@media (max-width:560px){
+  .readout{grid-template-columns:1fr;}
+  .kpi{border-left:none;border-top:1px solid var(--line);}
+  .kpi:first-child{border-top:none;}
+  .terms .wrap{grid-template-columns:1fr;}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+</style>
+</head>
+<body>
+
+<!-- Barra interna: no debe verse frente al cliente. Tecla I para mostrar u ocultar. -->
+<div id="internal" hidden>
+  <div class="wrap">
+    <b>Vista interna</b>
+    <span>Ejecución en serie. Pagos mensuales: supuesto por confirmar.</span>
+    <label>Licencia y póliza desde el
+      <select id="licSel">
+        <option value="6">mes 6 (tabla de pagos vigente)</option>
+        <option value="11">mes 11 (alternativa, tras el go-live de constructora)</option>
+      </select>
+    </label>
+    <span id="centsNote" class="diff"></span>
+    <button class="hide" id="hideInternal">Ocultar (tecla I)</button>
+  </div>
+</div>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <div class="logo">
+        <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <circle cx="16" cy="20" r="11" stroke="#FFFFFF" stroke-width="3.4"/>
+          <circle cx="27" cy="20" r="11" stroke="#E2571F" stroke-width="3.4"/>
+        </svg>
+        <span>TEKUNO</span>
+      </div>
+      <h1>Simulador de inversión</h1>
+      <p class="sub">Implementación de Odoo para Constructora CEIRO · Propuesta del 2 de septiembre de 2026 · Importes con IVA incluido</p>
+    </div>
+    <div class="controls">
+      <div>
+        <span class="ctl-label" id="scnLabel">Alcance</span>
+        <div class="seg" role="group" aria-labelledby="scnLabel">
+          <button data-scn="completa" aria-pressed="true">Propuesta completa</button>
+          <button data-scn="solo" aria-pressed="false">Solo plantas de asfalto</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="summary">
+  <div class="wrap">
+    <div class="fig">
+      <p class="k">Inversión del primer año</p>
+      <p class="v" id="sTotal">—</p>
+      <p class="h" id="sTotalH"></p>
+    </div>
+    <div class="fig">
+      <p class="k">El proyecto · se paga una vez</p>
+      <p class="v" id="sProj">—</p>
+      <p class="h" id="sProjH"></p>
+    </div>
+    <div class="fig">
+      <p class="k">La operación · cada año</p>
+      <p class="v" id="sOps">—</p>
+      <p class="h">Licencia de 6 usuarios y póliza de soporte, con vigencia de un año. Es lo que se renueva; el proyecto no se vuelve a pagar.</p>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="wrap">
+    <div class="sim-head">
+      <div>
+        <h2>Cómo avanza la inversión, mes a mes</h2>
+        <p>Mueva el control o toque cualquier mes de la gráfica para ver qué se ha pagado, qué falta y qué se ha entregado en ese punto del proyecto.</p>
+      </div>
+      <button class="play" id="play">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path id="playIcon" d="M2 1l9 5-9 5z" fill="currentColor"/></svg>
+        <span id="playTxt">Reproducir</span>
+      </button>
+    </div>
+
+    <div class="chart-card">
+      <svg id="chart" viewBox="0 0 1000 300" role="img" aria-label="Pagos mensuales y acumulado de la inversión"></svg>
+      <div class="legend">
+        <span><i style="background:var(--teal-deep)"></i>Implementación plantas</span>
+        <span id="legCons"><i style="background:var(--orange)"></i>Implementación constructora</span>
+        <span><i style="background:var(--orange-soft)"></i>Licencia anual</span>
+        <span><i style="background:var(--grey-bar)"></i>Póliza de soporte</span>
+        <span><i class="line"></i>Pagado acumulado</span>
+      </div>
+      <div class="slider">
+        <label for="month">Avance</label>
+        <input type="range" id="month" min="0" max="17" step="1" value="0" aria-describedby="monthOut">
+        <output id="monthOut" for="month">Antes del arranque</output>
+      </div>
+    </div>
+
+    <div class="readout" aria-live="polite">
+      <div class="kpi paid">
+        <p class="k">Pagado a la fecha</p>
+        <p class="v" id="rPaid">$0.00</p>
+        <div class="meter"><i id="rMeter"></i></div>
+        <p class="d" id="rPct">0% de la inversión del primer año</p>
+      </div>
+      <div class="kpi">
+        <p class="k">Por pagar</p>
+        <p class="v" id="rLeft">—</p>
+        <p class="d" id="rLeftD"></p>
+      </div>
+      <div class="kpi">
+        <p class="k">Pago de este mes</p>
+        <p class="v" id="rNow">—</p>
+        <p class="d" id="rNowD"></p>
+      </div>
+      <div class="kpi">
+        <p class="k">Próximo pago</p>
+        <p class="v" id="rNext">—</p>
+        <p class="d" id="rNextD"></p>
+      </div>
+    </div>
+
+    <div class="lower">
+      <div>
+        <h3>Dónde está el proyecto</h3>
+        <p class="phase" id="phase"></p>
+        <ul class="ms" id="ms"></ul>
+      </div>
+      <div>
+        <h3>Calendario de pagos</h3>
+        <div class="sched" id="schedBox">
+          <table>
+            <thead><tr><th>Mes</th><th>Concepto</th><th class="a">Importe</th><th>Estado</th></tr></thead>
+            <tbody id="schedBody"></tbody>
+            <tfoot><tr><td></td><td>Total del primer año</td><td class="a" id="schedTotal"></td><td></td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<section class="bene" id="beneficios">
+  <div class="wrap">
+    <div class="sim-head">
+      <div>
+        <h2>Dónde se puede esperar el beneficio</h2>
+        <p>Referencias publicadas por firmas de investigación del sector. Indican en qué áreas suele verse la mejora y el tamaño de la oportunidad. El resultado para CEIRO dependerá de su propia operación.</p>
+      </div>
+    </div>
+
+    <div class="bene-group">
+      <h3>Plantas de asfalto</h3>
+      <div class="bene-grid">
+        <div class="bn">
+          <p class="bn-area">Control de inventario</p>
+          <p class="bn-n">±15–30%</p>
+          <div class="mv"><div class="mv-band"><span class="o"></span><span class="i"></span><span class="c"></span></div><div class="mv-legend"><span>−30%</span><span>−15%</span><span>valor real</span><span>+15%</span><span>+30%</span></div></div>
+          <p class="bn-t">Margen de error típico al estimar visualmente el volumen de un acopio de agregados.</p>
+          <p class="bn-m">Lo atiende: inventario por entradas y consumos, Fase 1</p>
+          <p class="bn-s">Merrett Survey Mining, citado por Birdi</p>
+        </div>
+        <div class="bn">
+          <p class="bn-area">Exactitud de inventario</p>
+          <p class="bn-n">97%</p>
+          <div class="mv"><div class="mv-row"><span>Con ERP</span><span class="mv-track"><i class="mv-fill" style="--w:97%"></i></span><span class="mv-v">97%</span></div></div>
+          <p class="bn-t">Exactitud que alcanzan las manufactureras con mejor desempeño tras implementar un ERP.</p>
+          <p class="bn-m">Lo atiende: lotes de AC-20, ubicaciones y conteos cíclicos, Fase 1</p>
+          <p class="bn-s">Aberdeen Group, ERP in Manufacturing</p>
+        </div>
+        <div class="bn">
+          <p class="bn-area">Capital de trabajo</p>
+          <p class="bn-n">18%</p>
+          <div class="mv"><div class="mv-row"><span>Antes</span><span class="mv-track"><i class="mv-fill base" style="--w:100%"></i></span><span class="mv-v">100</span></div><div class="mv-row"><span>Con ERP</span><span class="mv-track"><i class="mv-fill" style="--w:82%"></i></span><span class="mv-v">82</span></div></div>
+          <p class="bn-t">Reducción de inventario que esas mismas empresas atribuyen a su ERP.</p>
+          <p class="bn-m">Lo atiende: reabastecimiento, stock mínimo y días de stock, Fase 1</p>
+          <p class="bn-s">Aberdeen Group, ERP in Manufacturing</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bene-group" id="beneCompras">
+      <h3>Compras de constructora <span class="only">Incluido en la propuesta completa</span></h3>
+      <div class="bene-grid">
+        <div class="bn">
+          <p class="bn-area">Ahorros en compras</p>
+          <p class="bn-n">Hasta 16%</p>
+          <div class="mv"><div class="mv-row"><span>Ahorro negociado</span><span class="mv-track"><i class="mv-fill" style="--w:84%"></i><i class="mv-seg" style="--l:84%;--w:16%"></i></span><span class="mv-v">−16%</span></div></div>
+          <p class="bn-t">De los ahorros negociados con proveedores se pierde cuando se compra fuera del proceso establecido.</p>
+          <p class="bn-m">Lo atiende: requisiciones, matriz DOA y comparativos</p>
+          <p class="bn-s">The Hackett Group, 2019</p>
+        </div>
+        <div class="bn">
+          <p class="bn-area">Ciclo de compra</p>
+          <p class="bn-n">5 h / 48 h</p>
+          <div class="mv"><div class="mv-row"><span>Mejor desempeño</span><span class="mv-track"><i class="mv-fill" style="--w:10.4%"></i></span><span class="mv-v">5 h</span></div><div class="mv-row"><span>Peor desempeño</span><span class="mv-track"><i class="mv-fill hot" style="--w:100%"></i></span><span class="mv-v">48 h</span></div></div>
+          <p class="bn-t">Tiempo de requisición a orden de compra en las organizaciones de mejor y de peor desempeño.</p>
+          <p class="bn-m">Lo atiende: flujo digital de requisición, autorización y OC</p>
+          <p class="bn-s">APQC, citado por Planergy</p>
+        </div>
+        <div class="bn">
+          <p class="bn-area">Costo administrativo</p>
+          <p class="bn-n">US$14–54</p>
+          <div class="mv"><div class="mv-row"><span>Proceso eficiente</span><span class="mv-track"><i class="mv-fill" style="--w:25.9%"></i></span><span class="mv-v">US$14</span></div><div class="mv-row"><span>Proceso ineficiente</span><span class="mv-track"><i class="mv-fill hot" style="--w:100%"></i></span><span class="mv-v">US$54+</span></div></div>
+          <p class="bn-t">Costo de procesar una sola orden de compra, según qué tan eficiente es el proceso.</p>
+          <p class="bn-m">Lo atiende: expediente digital y control documental</p>
+          <p class="bn-s">APQC, abril de 2026</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="bene-note">Panorama Consulting reporta que 53% de las organizaciones obtuvo menos de la mitad de los beneficios que esperaba de su ERP, y recomienda acordar indicadores desde el inicio. Por eso la propuesta incluye dashboards y KPIs desde la Fase 1: para medir el avance con los datos de la propia operación.</p>
+
+    <div class="sources">
+      <h3>Fuentes</h3>
+      <ul>
+        <li>Aberdeen Group, <em>ERP in Manufacturing</em>: 18% de reducción de inventario y 97% de exactitud en empresas best-in-class. <a href="https://www.slideshare.net/slideshow/0466-7812raer-pinmanufacturing2012nckp13nsp/16784100" target="_blank" rel="noopener">Ver</a></li>
+        <li>Birdi, citando a Merrett Survey Mining: la estimación visual de acopios tiene un margen de ±15–30%. <a href="https://www.birdi.io/blog-post/how-to-reconcile-stockpile-volumes-a-step-by-step-guide-for-mine-and-quarry-operators" target="_blank" rel="noopener">Ver</a></li>
+        <li>The Hackett Group, <em>User Experience and Maverick Spend Study</em> (2019): hasta 16% de los ahorros negociados se pierde en compras fuera de proceso. <a href="https://get.coupa.com/rs/950-OLU-185/images/19-Maverick-Spend-Report.pdf" target="_blank" rel="noopener">Ver</a></li>
+        <li>APQC, citado por Planergy: de 5 a 48 horas de requisición a orden de compra entre mejor y peor desempeño. <a href="https://planergy.com/blog/improve-purchase-order-cycle-time/" target="_blank" rel="noopener">Ver</a></li>
+        <li>APQC, citado por VeroTX (abril de 2026): procesar una orden de compra cuesta de US$14 a más de US$54. <a href="https://verotx.com/blog/purchase-requisition-consolidation" target="_blank" rel="noopener">Ver</a></li>
+        <li>Panorama Consulting, <em>ERP Report 2015</em>: 53% de las organizaciones obtuvo menos de la mitad de los beneficios esperados. <a href="https://www.panorama-consulting.com/wp-content/uploads/2016/07/2015-ERP-Report-3.pdf" target="_blank" rel="noopener">Ver</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="terms">
+  <div class="wrap">
+    <div><h3>Pagos por fase</h3><p>Cada pago de implementación está asociado a una fase, y cada fase se concluye con la aceptación formal de CEIRO.</p></div>
+    <div><h3>Cambios de alcance</h3><p>Lo que no está en el alcance se evalúa técnicamente y, en su caso, se cotiza mediante control de cambios.</p></div>
+    <div><h3>Calendario</h3><p>Los tiempos dependen de la disponibilidad de usuarios clave y de la entrega oportuna de información por parte de CEIRO.</p></div>
+    <div><h3>Fuente</h3><p>Todos los importes corresponden a la propuesta técnica y económica e incluyen IVA. Pagos mensuales, ejecución en serie.</p></div>
+  </div>
+  <div class="wrap foot">Tekuno S.A. de C.V. · Blvd. Vía Atlixcayotl 5208, Torre 1, Piso 15, San Andrés Cholula, Puebla · Tel. 222 688 69 79 · www.tekuno.io</div>
+</section>
+
+<script>
+/* ==========================================================================
+   Datos: todos los importes en centavos, tomados tal cual de las tablas
+   de forma de pago de la propuesta. No se redondea ni se ajusta ningún pago.
+   ========================================================================== */
+const PAGO = {
+  plantas:      { sin: 6984127, tot: 8101587 },  // $69,841.27 / $81,015.87
+  constructora: { sin: 6285714, tot: 7291429 },  // $62,857.14 / $72,914.29
+  licencia:     { sin: 6170667, tot: 7157973 },  // $61,706.67 / $71,579.73
+  poliza:       { sin:  266157, tot:  308743 }   // $2,661.57  / $3,087.43
+};
+// Totales tal como aparecen en la propuesta, para detectar diferencias de centavos
+const REF = {
+  completa: { sin: 75713762, tot: 87827964 },
+  solo:     { sin: 44285190, tot: 51370821 }
+};
+const COLOR = { plantas:'#1B4E52', constructora:'#E2571F', licencia:'#F2B895', poliza:'#9AA3A6' };
+const ORDER = ['plantas','constructora','licencia','poliza'];
+
+const state = { scn:'completa', iva:true, lic:6, t:0 };
+
+const $ = id => document.getElementById(id);
+const money = c => (c/100).toLocaleString('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:2});
+const v = p => state.iva ? p.tot : p.sin;
+const ivaTxt = () => state.iva ? 'con IVA' : 'sin IVA';
+
+function build(){
+  const P = [];
+  for (let i = 1; i <= 5; i++){
+    P.push({ m:i, cat:'plantas', ...PAGO.plantas,
+      label: i <= 3 ? 'Plantas · Fase 1, pago ' + i + ' de 3' : 'Plantas · Fase 2, pago ' + (i-3) + ' de 2' });
+  }
+  if (state.scn === 'completa'){
+    for (let i = 1; i <= 5; i++){
+      P.push({ m:5+i, cat:'constructora', ...PAGO.constructora, label:'Compras constructora · pago ' + i + ' de 5' });
+    }
+  }
+  const L = state.scn === 'completa' ? state.lic : 6;
+  P.push({ m:L, cat:'licencia', ...PAGO.licencia, label:'Licencia Odoo SH · 6 usuarios, un año' });
+  for (let i = 0; i < 12; i++){
+    P.push({ m:L+i, cat:'poliza', ...PAGO.poliza, label:'Póliza de soporte · mes ' + (i+1) + ' de 12' });
+  }
+  const N = Math.max(...P.map(p => p.m));
+  return { P, L, N };
+}
+
+function milestones(L){
+  const ms = [
+    { m:3, t:'Fase 1 concluida', d:'Arquitectura multiplanta, compras, inventarios, manufactura, BoMs y dashboards operativos.' },
+    { m:5, t:'Fase 2 concluida', d:'Contabilidad, catálogo contable, centros de costo y rentabilidad por contrato.' }
+  ];
+  if (state.scn === 'completa'){
+    ms.push({ m:10, t:'Gestión de compras concluida', d:'Requisiciones, matriz DOA, comparativos, proveedores, caja chica y control documental.' });
+  }
+  ms.push({ m:L, t:'Pago de licencia e inicio de póliza', d:'Se cubre la licencia anual de 6 usuarios y arranca la póliza de soporte de 12 meses.' });
+  ms.push({ m:L+11, t:'Último pago del primer año', d:'Termina la póliza de 12 meses. El proyecto queda pagado en su totalidad.' });
+  return ms.sort((a,b) => a.m - b.m);
+}
+
+function phaseText(t, N){
+  if (t === 0) return 'Antes del arranque. Todavía no se ha realizado ningún pago.';
+  if (t <= 3) return 'Fase 1 de plantas en curso, mes ' + t + ' de 3.';
+  if (t <= 5) return 'Fase 2 de plantas en curso, mes ' + (t-3) + ' de 2.';
+  if (state.scn === 'completa' && t <= 10) return 'Fases de plantas concluidas. Implementación de compras de constructora en curso, mes ' + (t-5) + ' de 5.';
+  if (t < N) return 'Plataforma en operación. La póliza de soporte está vigente.';
+  return 'Último pago del primer año. A partir de aquí solo se renuevan licencia y póliza.';
+}
+
+/* ---------- gráfica ---------- */
+function drawChart(P, N, t, total){
+  const W = 1000, H = 300, PL = 58, PR = 96, PT = 16, PB = 32;
+  const cw = (W - PL - PR) / N;
+  const bw = Math.min(cw * 0.64, 44);
+
+  const perMonth = [];
+  for (let m = 1; m <= N; m++){
+    const parts = ORDER.map(cat => ({ cat, val: P.filter(p => p.m === m && p.cat === cat).reduce((s,p) => s + v(p), 0) }));
+    perMonth.push({ m, parts, sum: parts.reduce((s,x) => s + x.val, 0) });
+  }
+  const step = 5000000; // $50,000 en centavos
+  const top = Math.max(step, Math.ceil(Math.max(...perMonth.map(x => x.sum)) / step) * step);
+  const y  = val => PT + (H - PT - PB) * (1 - val / top);
+  const yc = val => PT + (H - PT - PB) * (1 - val / total);
+  const xc = m => PL + cw * (m - 0.5);
+
+  let s = '';
+  for (let g = 0; g <= top; g += step){
+    s += '<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+y(g)+'" y2="'+y(g)+'" stroke="#E4E2DC" stroke-width="1"/>';
+    s += '<text class="axis" x="'+(PL-8)+'" y="'+(y(g)+4)+'" text-anchor="end">$'+(g/100000)+'k</text>';
+  }
+  if (t > 0){
+    s += '<rect x="'+(PL + cw*(t-1))+'" y="'+PT+'" width="'+cw+'" height="'+(H-PT-PB)+'" fill="#FBEDE5"/>';
+  }
+  perMonth.forEach(mo => {
+    let acc = 0;
+    const op = mo.m <= t ? 1 : 0.32;
+    mo.parts.forEach(pt => {
+      if (!pt.val) return;
+      const y1 = y(acc + pt.val), h = y(acc) - y1;
+      s += '<rect x="'+(xc(mo.m)-bw/2)+'" y="'+y1+'" width="'+bw+'" height="'+h+'" fill="'+COLOR[pt.cat]+'" opacity="'+op+'"/>';
+      acc += pt.val;
+    });
+    const bold = mo.m === t ? ' style="fill:#22282B;font-weight:600"' : '';
+    s += '<text class="axis" x="'+xc(mo.m)+'" y="'+(H-PB+18)+'" text-anchor="middle"'+bold+'>'+mo.m+'</text>';
+  });
+
+  // acumulado: tramo pagado continuo, tramo futuro punteado
+  const pts = [[PL, yc(0)]];
+  let cum = 0;
+  perMonth.forEach(mo => { cum += mo.sum; pts.push([xc(mo.m), yc(cum)]); });
+  const path = arr => arr.map((p,i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const cut = Math.min(t, N);
+  s += '<path d="'+path(pts.slice(0, cut+1))+'" fill="none" stroke="#22282B" stroke-width="2.4"/>';
+  s += '<path d="'+path(pts.slice(cut))+'" fill="none" stroke="#22282B" stroke-width="1.6" stroke-dasharray="5 5" opacity=".45"/>';
+  if (t > 0) s += '<circle cx="'+pts[cut][0]+'" cy="'+pts[cut][1]+'" r="5" fill="#E2571F" stroke="#FFFFFF" stroke-width="2"/>';
+  s += '<text class="endlab" x="'+(W-PR+10)+'" y="'+(yc(total)+5)+'">'+money(total).replace(/\.\d\d$/,'')+'</text>';
+  s += '<text class="axis" x="'+(W-PR+10)+'" y="'+(yc(total)+21)+'">acumulado</text>';
+
+  for (let m = 1; m <= N; m++){
+    s += '<rect class="hit" data-m="'+m+'" x="'+(PL + cw*(m-1))+'" y="'+PT+'" width="'+cw+'" height="'+(H-PT)+'"><title>Mes '+m+'</title></rect>';
+  }
+  $('chart').innerHTML = s;
+}
+
+/* ---------- render ---------- */
+function render(){
+  const { P, L, N } = build();
+  const slider = $('month');
+  slider.max = N;
+  if (state.t > N) state.t = N;
+  slider.value = state.t;
+  const t = state.t;
+
+  const total = P.reduce((s,p) => s + v(p), 0);
+  const proj  = P.filter(p => p.cat === 'plantas' || p.cat === 'constructora').reduce((s,p) => s + v(p), 0);
+  const ops   = P.filter(p => p.cat === 'licencia' || p.cat === 'poliza').reduce((s,p) => s + v(p), 0);
+
+  $('sTotal').textContent = money(total);
+  $('sTotalH').textContent = (state.scn === 'completa'
+      ? 'Plantas de asfalto y gestión de compras de constructora, '
+      : 'Fases 1 y 2 de plantas de asfalto, ') + ivaTxt() + '.';
+  $('sProj').textContent = money(proj);
+  $('sProjH').textContent = state.scn === 'completa'
+      ? 'Diez meses de implementación, en pagos asociados a cada fase.'
+      : 'Cinco meses de implementación, en pagos asociados a cada fase.';
+  $('sOps').textContent = money(ops);
+  $('legCons').style.display = state.scn === 'completa' ? '' : 'none';
+
+  drawChart(P, N, t, total);
+
+  const paid = P.filter(p => p.m <= t).reduce((s,p) => s + v(p), 0);
+  const now  = P.filter(p => p.m === t);
+  const nextM = P.filter(p => p.m > t).map(p => p.m).sort((a,b) => a-b)[0];
+  const next = nextM ? P.filter(p => p.m === nextM) : [];
+  const pct = total ? Math.round(paid / total * 100) : 0;
+
+  $('monthOut').textContent = t === 0 ? 'Antes del arranque' : 'Mes ' + t + ' de ' + N;
+  $('rPaid').textContent = money(paid);
+  $('rMeter').style.width = pct + '%';
+  $('rPct').textContent = pct + '% de la inversión del primer año';
+  $('rLeft').textContent = money(total - paid);
+  $('rLeftD').textContent = total - paid > 0
+      ? 'Distribuido en ' + (N - t) + (N - t === 1 ? ' mes restante' : ' meses restantes')
+      : 'Primer año liquidado';
+  if (now.length){
+    $('rNow').textContent = money(now.reduce((s,p) => s + v(p), 0));
+    $('rNowD').innerHTML = now.map(p => p.label).join('<br>');
+  } else {
+    $('rNow').textContent = '—';
+    $('rNowD').textContent = t === 0 ? 'El primer pago corresponde al mes 1.' : 'Sin pago este mes.';
+  }
+  if (next.length){
+    $('rNext').textContent = money(next.reduce((s,p) => s + v(p), 0));
+    $('rNextD').textContent = 'Mes ' + nextM + ' · ' + (next.length > 1 ? next.length + ' conceptos' : next[0].label);
+  } else {
+    $('rNext').textContent = '—';
+    $('rNextD').textContent = 'Sin pagos pendientes en el primer año.';
+  }
+
+  $('phase').textContent = phaseText(t, N);
+  $('ms').innerHTML = milestones(L).map(x =>
+    '<li class="'+(t >= x.m ? 'done' : '')+'"><span class="mk"></span><span class="when">Mes '+x.m+'</span>' +
+    '<span><span class="t">'+x.t+'</span><span class="dsc">'+x.d+'</span></span></li>'
+  ).join('');
+
+  let rows = '';
+  for (let m = 1; m <= N; m++){
+    const items = P.filter(p => p.m === m);
+    if (!items.length) continue;
+    const cls = m < t ? 'paid' : (m === t ? 'cur' : '');
+    const st  = m < t ? 'Pagado' : (m === t ? 'Este mes' : 'Pendiente');
+    rows += '<tr class="'+cls+'" data-row="'+m+'"><td class="m">Mes '+m+'</td><td>' +
+      items.map(p => '<span class="c">'+p.label+'</span>').join('') +
+      '</td><td class="a">'+money(items.reduce((s,p) => s + v(p), 0))+'</td><td class="s">'+st+'</td></tr>';
+  }
+  $('schedBody').innerHTML = rows;
+  $('schedTotal').textContent = money(total);
+  const cur = document.querySelector('#schedBody tr[data-row="'+t+'"]');
+  const box = $('schedBox');
+  if (cur) box.scrollTop = cur.offsetTop - box.clientHeight / 2 + cur.clientHeight;
+  else if (t === 0) box.scrollTop = 0;
+
+  // nota interna de centavos
+  const ref = REF[state.scn][state.iva ? 'tot' : 'sin'];
+  const diff = total - ref;
+  $('centsNote').textContent = diff === 0
+      ? 'Suma de pagos igual al total de la propuesta.'
+      : 'Suma de pagos ' + money(total) + ' vs. total en la propuesta ' + money(ref) +
+        ' (diferencia de ' + money(Math.abs(diff)) + ').';
+  $('licSel').disabled = state.scn !== 'completa';
+  $('licSel').value = String(state.scn === 'completa' ? state.lic : 6);
+  $('beneCompras').classList.toggle('off', state.scn !== 'completa');
+}
+
+/* ---------- controles ---------- */
+function setT(t){ state.t = t; render(); }
+
+$('month').addEventListener('input', e => { stop(); setT(Number(e.target.value)); });
+$('chart').addEventListener('click', e => {
+  const r = e.target.closest('[data-m]');
+  if (r){ stop(); setT(Number(r.dataset.m)); }
+});
+document.querySelectorAll('[data-scn]').forEach(b => b.addEventListener('click', () => {
+  state.scn = b.dataset.scn;
+  document.querySelectorAll('[data-scn]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  render();
+}));
+$('licSel').addEventListener('change', e => { state.lic = Number(e.target.value); render(); });
+
+let timer = null;
+function stop(){
+  if (!timer) return;
+  clearInterval(timer); timer = null;
+  $('playTxt').textContent = 'Reproducir';
+  $('playIcon').setAttribute('d','M2 1l9 5-9 5z');
+}
+$('play').addEventListener('click', () => {
+  if (timer){ stop(); return; }
+  const N = Number($('month').max);
+  if (state.t >= N) setT(0);
+  $('playTxt').textContent = 'Pausar';
+  $('playIcon').setAttribute('d','M2 1h3v10H2zM7 1h3v10H7z');
+  timer = setInterval(() => {
+    const max = Number($('month').max);
+    if (state.t >= max){ stop(); return; }
+    setT(state.t + 1);
+  }, 650);
+});
+
+const internal = $('internal');
+$('hideInternal').addEventListener('click', () => { internal.hidden = true; });
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key.toLowerCase() === 'i') internal.hidden = !internal.hidden;
+});
+
+const bene = document.getElementById('beneficios');
+if ('IntersectionObserver' in window){
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ bene.classList.add('in'); io.disconnect(); } }), { threshold: 0.2 });
+  io.observe(bene);
+} else { bene.classList.add('in'); }
+
+render();
+</script>
+</body>
+</html>
